@@ -1,0 +1,12 @@
+**/target/
+**/.mvn/
+*.class
+*.log
+**/data/
+**/node_modules/
+**/dist/
+**/.env
+**/.idea/
+**/*.iml
+**/.vscode/
+.DS_Store
