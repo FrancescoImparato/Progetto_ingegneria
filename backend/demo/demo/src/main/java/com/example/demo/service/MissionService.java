@@ -5,6 +5,7 @@ import com.example.demo.dto.*;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.model.*;
 import com.example.demo.repository.MissionRepository;
+import com.example.demo.repository.ParticipationRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,10 +19,12 @@ public class MissionService {
 
     private final MissionRepository missionRepository;
     private final UserRepository userRepository;
+    private final ParticipationRepository participationRepository;
 
-    public MissionService(MissionRepository missionRepository, UserRepository userRepository) {
+    public MissionService(MissionRepository missionRepository, UserRepository userRepository, ParticipationRepository participationRepository) {
         this.missionRepository = missionRepository;
         this.userRepository = userRepository;
+        this.participationRepository = participationRepository;
     }
 
     @Transactional
@@ -67,6 +70,9 @@ public class MissionService {
         if (mission.getStatus() == MissionStatus.SUSPENDED || mission.getStatus() == MissionStatus.REMOVED) {
             throw new BusinessException("Una missione moderata non può essere modificata", HttpStatus.CONFLICT);
         }
+        if (participationRepository.existsByMissionId(missionId)) {
+            throw new BusinessException("Non puoi modificare una missione già iniziata da partecipanti", HttpStatus.CONFLICT);
+}
         // Nota: nel Blocco 3 aggiungeremo qui il controllo "nessun partecipante ha già iniziato la missione"
 
         validateMissionType(req.type(), req.durationMinutes());
