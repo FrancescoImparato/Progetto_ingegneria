@@ -18,15 +18,14 @@ public class ParticipationService {
     private final ParticipationRepository participationRepository;
     private final MissionRepository missionRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
-    public ParticipationService(
-        ParticipationRepository participationRepository,
-        MissionRepository missionRepository,
-        UserRepository userRepository
-    ) {
+    public ParticipationService(ParticipationRepository participationRepository, MissionRepository missionRepository, UserRepository userRepository, NotificationService notificationService) 
+    {
         this.participationRepository = participationRepository;
         this.missionRepository = missionRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -53,7 +52,13 @@ public class ParticipationService {
         Instant now = Instant.now();
         Participation participation = new Participation(user, mission, now);
         participationRepository.save(participation);
-        return ParticipationResponse.from(participation, now);
+        notificationService.notify(
+            user,
+            NotificationType.MISSION_ACCEPTED,
+            "Hai accettato la missione '" + mission.getTitle() + "'.",
+            participation.getId()
+        );
+        return ParticipationResponse.from(participation, now); 
     }
 
     @Transactional
@@ -97,6 +102,22 @@ public class ParticipationService {
         if (p.getStatus() != ParticipationStatus.IN_PROGRESS) {
             throw new BusinessException("La missione non è più in corso", HttpStatus.CONFLICT);
         }
+        if (p.getStatus() == ParticipationStatus.COMPLETED) {
+            notificationService.notify(
+                user,
+                NotificationType.MISSION_COMPLETED,
+                "Missione '" + p.getMission().getTitle() + "' completata! Punti ottenuti: " + p.getScoreAwarded(),
+                p.getId()
+            );
+        }
+        if (p.getStatus() == ParticipationStatus.PENDING_VERIFICATION) {
+            notificationService.notify(
+                p.getMission().getAuthor(),
+                NotificationType.PROOF_SUBMITTED,
+                user.getNickname() + " ha inviato delle prove da verificare per '" + p.getMission().getTitle() + "'.",
+                p.getId()
+            );
+        }
 
         ObjectiveProgress progress = p.getProgresses().stream()
             .filter(op -> op.getObjective().getId().equals(objectiveId))
@@ -128,7 +149,12 @@ public class ParticipationService {
         }
         Instant now = Instant.now();
         if (p.refreshExpirationIfNeeded(now)) {
-            throw new BusinessException("La missione è già scaduta", HttpStatus.CONFLICT);
+            notificationService.notify(
+                user,
+                NotificationType.MISSION_EXPIRED,
+                "Il tempo per '" + p.getMission().getTitle() + "' è scaduto.",
+                p.getId()
+            );
         }
         try {
             p.abandon();
@@ -180,6 +206,14 @@ public class ParticipationService {
         progress.verify(req.approved(), req.note(), now);
         p.evaluateOutcome(now);
         participationRepository.save(p);
+        notificationService.notify(
+            p.getUser(),
+            NotificationType.PROOF_VERIFIED,
+            "Verifica prova per '" + p.getMission().getTitle() + "': "
+                + (req.approved() ? "APPROVATA" : "RIFIUTATA")
+                + " (Stato missione: " + p.getStatus() + ")",
+            p.getId()
+        );
         return ParticipationResponse.from(p, now);
     }
 
