@@ -3,10 +3,11 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import ExplorePage from './pages/ExplorePage';
 import { LoginPage, RegisterPage, ProfilePage } from './pages/AuthPages';
-
-function Placeholder({ title }) {
-  return <div className="page"><h2>{title}</h2><p>In arrivo nello Step 2...</p></div>;
-}
+import CreateMissionPage from './pages/CreateMissionPage';
+import MissionDetailPage from './pages/MissionDetailPage';
+import ParticipationPage from './pages/ParticipationPage';
+import DashboardPage from './pages/DashboardPage';
+import AdminPage from './pages/AdminPage';
 
 export default function App() {
   return (
@@ -19,10 +20,12 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/missions/:id" element={<Placeholder title="Dettaglio Missione" />} />
-            <Route path="/create-mission" element={<Placeholder title="Crea Missione" />} />
-            <Route path="/dashboard" element={<Placeholder title="Area Personale" />} />
-            <Route path="/admin" element={<Placeholder title="Pannello Moderazione" />} />
+            <Route path="/missions/:id" element={<MissionDetailPage />} />
+            <Route path="/create-mission" element={<CreateMissionPage />} />
+            <Route path="/edit-mission/:id" element={<CreateMissionPage />} />
+            <Route path="/participations/:id" element={<ParticipationPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </main>
       </BrowserRouter>
